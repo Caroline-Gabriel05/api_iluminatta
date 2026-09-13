@@ -1,0 +1,6 @@
+@Iluminatta.Api_HostAddress = http://localhost:5288
+
+GET {{Iluminatta.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
