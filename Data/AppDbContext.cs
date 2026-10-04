@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using Iluminatta.Api.Models;
-using Microsoft.EntityFrameworkCore.Query.Internal;
 
 namespace Iluminatta.Api.Data;
 
@@ -11,37 +10,18 @@ public class AppDbContext : DbContext
     {
     }
 
-    public DbSet<Cartao> Cartoes { get; set; }
     public DbSet<Categoria> Categorias { get; set; }
     public DbSet<Cliente> Clientes { get; set; }
     public DbSet<ImagemProduto> ImagensProdutos { get; set; }
     public DbSet<ItemPedido> ItensPedidos { get; set; }
     public DbSet<Marca> Marcas { get; set; }
+    public DbSet<Pagamento> Pagamentos { get; set; }
     public DbSet<Pedido> Pedidos { get; set; }
     public DbSet<Produto> Produtos { get; set; }
     public DbSet<Usuario> Usuarios { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Cartao>(entity =>
-        {
-            entity.ToTable("tb_cartao");
-            entity.HasKey(p => p.Id);
-            entity.Property(p => p.Id)
-                .HasColumnName("CODIGO");
-            entity.Property(p => p.ClienteId)
-                .HasColumnName("COD_CLIENTE");
-            entity.Property(p => p.Tipo)
-                .HasColumnName("TIPO");
-            entity.Property(p => p.Numero)
-                .HasColumnName("NUMERO");
-            entity.Property(p => p.Nome)
-                .HasColumnName("NOME");
-            entity.Property(p => p.Validade)
-                .HasColumnName("VALIDADE");
-            entity.Property(p => p.Cvv)
-                .HasColumnName("CVV");
-        });
         modelBuilder.Entity<Categoria>(entity =>
         {
             entity.ToTable("tb_codigo_prod");
@@ -88,6 +68,10 @@ public class AppDbContext : DbContext
                 .HasColumnName("CHAVE_IMG_PROD");
             entity.Property(p => p.CaminhoImagem)
                 .HasColumnName("CAMINHO_IMG");
+            entity.HasOne(p => p.Produto)
+                .WithMany(c => c.ImagensProdutos)
+                .HasForeignKey(p => p.ProdutoId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
         modelBuilder.Entity<ItemPedido>(entity =>
         {
@@ -101,6 +85,12 @@ public class AppDbContext : DbContext
                 .HasColumnName("COD_ITEM");
             entity.Property(p => p.QuantidadeItens)
                 .HasColumnName("QUANT_ITEM");
+            entity.HasOne(p => p.Produto)
+                .WithMany(c => c.ItensPedidos)
+                .HasForeignKey(p => p.ProdutoId);
+            entity.HasOne(p => p.Pedido)
+                .WithMany(c => c.ItensPedidos)
+                .HasForeignKey(p => p.PedidoId);
         });
         modelBuilder.Entity<Marca>(entity =>
         {
@@ -110,6 +100,37 @@ public class AppDbContext : DbContext
                 .HasColumnName("CODIGO");
             entity.Property(p => p.Nome)
                 .HasColumnName("MARCA");
+        });
+        modelBuilder.Entity<Pagamento>(entity =>
+        {
+            entity.ToTable("tb_pagamento");
+
+            entity.HasKey(p => p.Id);
+
+            entity.Property(p => p.Id)
+                .HasColumnName("CODIGO");
+
+            entity.Property(p => p.PedidoId)
+                .HasColumnName("COD_PEDIDO");
+
+            entity.Property(p => p.MercadoPagoId)
+                .HasColumnName("ID_MERCADO_PAGO");
+
+            entity.Property(p => p.Valor)
+                .HasColumnName("VALOR");
+
+            entity.Property(p => p.Status)
+                .HasColumnName("STATUS");
+
+            entity.Property(p => p.MetodoPagamento)
+                .HasColumnName("METODO_PAGAMENTO");
+
+            entity.Property(p => p.DataPagamento)
+                .HasColumnName("DATA_PAGAMENTO");
+
+            entity.HasOne(p => p.Pedido)
+                .WithMany()
+                .HasForeignKey(p => p.PedidoId);
         });
         modelBuilder.Entity<Pedido>(entity =>
         {
@@ -124,11 +145,14 @@ public class AppDbContext : DbContext
             entity.Property(p => p.ClienteId)
                 .HasColumnName("COD_CLIENTE");
             entity.Property(p => p.Parcelas)
-                .HasColumnName("PARCLAS");
+                .HasColumnName("PARCELAS");
             entity.Property(p => p.ValorTotal)
                 .HasColumnName("VALOR_TOTAL");
             entity.Property(p => p.Status)
                 .HasColumnName("STATU");
+            entity.HasOne(p => p.Cliente)
+                .WithMany(c => c.Pedidos)
+                .HasForeignKey(p => p.ClienteId);
         });
         modelBuilder.Entity<Produto>(entity =>
         {
@@ -153,9 +177,18 @@ public class AppDbContext : DbContext
 
             entity.Property(p => p.Descricao)
                 .HasColumnName("DESCRICAO");
+            entity.Property(p => p.Preco)
+                .HasColumnName("PRECO");
 
             entity.Property(p => p.Estoque)
                 .HasColumnName("ESTOQUE");
+
+            entity.HasOne(p => p.Categoria)
+                .WithMany(c => c.Produtos)
+                .HasForeignKey(p => p.CategoriaId);
+            entity.HasOne(p => p.Marca)
+                .WithMany(m => m.Produtos)
+                .HasForeignKey(p => p.MarcaId);
         });
         modelBuilder.Entity<Usuario>(entity =>
         {
@@ -171,6 +204,9 @@ public class AppDbContext : DbContext
                 .HasColumnName("SENHA");
             entity.Property(p => p.User)
                 .HasColumnName("USER");
+            entity.HasOne(p => p.Cliente)
+                .WithMany(c => c.Usuarios)
+                .HasForeignKey(p => p.ClienteId);
         });
     }
 }

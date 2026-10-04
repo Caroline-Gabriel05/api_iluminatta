@@ -9,7 +9,7 @@ namespace Iluminatta.Api.Models
         public int Parcelas { get; set; }
         public decimal ValorTotal { get; set; }
         public string Status { get; set; }
-
+        public Cliente Cliente { get; set; }
         public ICollection<ItemPedido> ItensPedidos { get; set; }
     }
 }
