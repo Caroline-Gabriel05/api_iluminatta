@@ -23,6 +23,7 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<PagamentoService>();
+builder.Services.AddHttpClient<MercadoPagoService>();
 
 var app = builder.Build();
 if (app.Environment.IsDevelopment())

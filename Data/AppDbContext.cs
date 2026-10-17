@@ -57,6 +57,10 @@ public class AppDbContext : DbContext
                 .HasColumnName("RUA");
             entity.Property(p => p.Numero)
                 .HasColumnName("NUMERO");
+            entity.Property(c => c.Email)
+                .HasColumnName("EMAIL")
+                .HasMaxLength(254)
+                .IsRequired(false);
         });
         modelBuilder.Entity<ImagemProduto>(entity =>
         {
@@ -149,7 +153,7 @@ public class AppDbContext : DbContext
             entity.Property(p => p.ValorTotal)
                 .HasColumnName("VALOR_TOTAL");
             entity.Property(p => p.Status)
-                .HasColumnName("STATU");
+                .HasColumnName("STATUS");
             entity.HasOne(p => p.Cliente)
                 .WithMany(c => c.Pedidos)
                 .HasForeignKey(p => p.ClienteId);

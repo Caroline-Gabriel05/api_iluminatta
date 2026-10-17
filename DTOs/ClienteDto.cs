@@ -12,4 +12,5 @@ public class ClienteDto
     public string Bairro { get; set; }
     public string Rua { get; set; }
     public int Numero { get; set; }
+    public string? Email { get; set; }
 }

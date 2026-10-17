@@ -56,7 +56,8 @@ public class ClientesController : ControllerBase
                 c.Cidade,
                 c.Bairro,
                 c.Rua,
-                c.Numero
+                c.Numero,
+                c.Email
             })
             .FirstOrDefaultAsync();
 
@@ -82,7 +83,8 @@ public class ClientesController : ControllerBase
             Cidade = clienteDto.Cidade,
             Bairro = clienteDto.Bairro,
             Rua = clienteDto.Rua,
-            Numero = clienteDto.Numero
+            Numero = clienteDto.Numero,
+            Email = clienteDto.Email
         };
 
         _context.Clientes.Add(cliente);
@@ -113,6 +115,7 @@ public class ClientesController : ControllerBase
         cliente.Bairro = clienteDto.Bairro;
         cliente.Rua = clienteDto.Rua;
         cliente.Numero = clienteDto.Numero;
+        cliente.Email = clienteDto.Email;
 
         await _context.SaveChangesAsync();
 

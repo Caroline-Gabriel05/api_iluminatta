@@ -13,6 +13,7 @@ namespace Iluminatta.Api.Models
         public string Bairro { get; set; }
         public string Rua { get; set; }
         public int Numero { get; set; }
+        public string? Email { get; set; }
 
         public ICollection<Pedido> Pedidos { get; set; }
         public ICollection<Usuario> Usuarios { get; set; }
