@@ -1,6 +1,7 @@
 using Iluminatta.Api.Data;
 using Iluminatta.Api.DTOs;
 using Iluminatta.Api.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 namespace Iluminatta.Api.Controllers;
@@ -17,22 +18,17 @@ public class ClientesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetClientes()
+    [Authorize]
+    public async Task<ActionResult<IEnumerable<ClienteResponseDto>>> BuscarClientes()
     {
         var clientes = await _context.Clientes
-            .Select(c => new
+            .Select(c => new ClienteResponseDto
             {
-                c.Id,
-                c.Nome,
-                c.Sobrenome,
-                c.Genero,
-                c.DataNascimento,
-                c.Cpf,
-                c.Cep,
-                c.Cidade,
-                c.Bairro,
-                c.Rua,
-                c.Numero
+                Id = c.Id,
+                Nome = c.Nome,
+                Sobrenome = c.Sobrenome,
+                Email = c.Email,
+                Cep = c.Cep
             })
             .ToListAsync();
 
@@ -40,62 +36,71 @@ public class ClientesController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetClientePorId(int id)
+    [Authorize]
+    public async Task<ActionResult<ClienteResponseDto>> BuscarClientePorId(int id)
     {
-        var cliente = await _context.Clientes
-            .Where(c => c.Id == id)
-            .Select(c => new
-            {
-                c.Id,
-                c.Nome,
-                c.Sobrenome,
-                c.Genero,
-                c.DataNascimento,
-                c.Cpf,
-                c.Cep,
-                c.Cidade,
-                c.Bairro,
-                c.Rua,
-                c.Numero,
-                c.Email
-            })
-            .FirstOrDefaultAsync();
+        var cliente = await _context.Clientes.FindAsync(id);
 
         if (cliente == null)
         {
-            return NotFound(new { mensagem = "Cliente não encontrado." });
+            return NotFound();
         }
 
-        return Ok(cliente);
+        var dto = new ClienteResponseDto
+        {
+            Id = cliente.Id,
+            Nome = cliente.Nome,
+            Sobrenome = cliente.Sobrenome,
+            Email = cliente.Email,
+            Cep = cliente.Cep
+        };
+
+        return Ok(dto);
     }
 
     [HttpPost]
-    public async Task<IActionResult> CriarCliente(ClienteDto clienteDto)
+    [Authorize]
+    public async Task<ActionResult<ClienteResponseDto>> CriarCliente([FromBody] ClienteCreateDto dto)
     {
+        var cpfExiste = await _context.Clientes.AnyAsync(c => c.Cpf == dto.Cpf);
+        if (cpfExiste)
+        {
+            return BadRequest(new { mensagem = "Já existe um cliente cadastrado com este CPF." });
+        }
+
         var cliente = new Cliente
         {
-            Nome = clienteDto.Nome,
-            Sobrenome = clienteDto.Sobrenome,
-            Genero = clienteDto.Genero,
-            DataNascimento = clienteDto.DataNascimento,
-            Cpf = clienteDto.Cpf,
-            Cep = clienteDto.Cep,
-            Cidade = clienteDto.Cidade,
-            Bairro = clienteDto.Bairro,
-            Rua = clienteDto.Rua,
-            Numero = clienteDto.Numero,
-            Email = clienteDto.Email
+            Nome = dto.Nome,
+            Sobrenome = dto.Sobrenome,
+            Genero = dto.Genero,
+            DataNascimento = dto.DataNascimento,
+            Cpf = dto.Cpf,
+            Cep = dto.Cep,
+            Cidade = dto.Cidade,
+            Bairro = dto.Bairro,
+            Rua = dto.Rua,
+            Numero = dto.Numero,
+            Email = dto.Email
         };
 
         _context.Clientes.Add(cliente);
-
         await _context.SaveChangesAsync();
 
-        return Ok(cliente);
+        var responseDto = new ClienteResponseDto
+        {
+            Id = cliente.Id,
+            Nome = cliente.Nome,
+            Sobrenome = cliente.Sobrenome,
+            Email = cliente.Email,
+            Cep = cliente.Cep
+        };
+
+        return CreatedAtAction(nameof(BuscarClientePorId), new { id = cliente.Id }, responseDto);
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> EditarCliente(int id, ClienteDto clienteDto)
+    [Authorize]
+    public async Task<IActionResult> EditarCliente(int id, ClienteUpdateDto clienteDto)
     {
         var cliente = await _context.Clientes
             .FirstOrDefaultAsync(c => c.Id == id);
@@ -109,7 +114,6 @@ public class ClientesController : ControllerBase
         cliente.Sobrenome = clienteDto.Sobrenome;
         cliente.Genero = clienteDto.Genero;
         cliente.DataNascimento = clienteDto.DataNascimento;
-        cliente.Cpf = clienteDto.Cpf;
         cliente.Cep = clienteDto.Cep;
         cliente.Cidade = clienteDto.Cidade;
         cliente.Bairro = clienteDto.Bairro;
@@ -123,9 +127,11 @@ public class ClientesController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize]
     public async Task<IActionResult> ExcluirCliente(int id)
     {
         var cliente = await _context.Clientes
+            .Include(c => c.Pedidos)
             .FirstOrDefaultAsync(c => c.Id == id);
 
         if (cliente == null)
@@ -133,10 +139,14 @@ public class ClientesController : ControllerBase
             return NotFound(new { mensagem = "Cliente não encontrado." });
         }
 
+        if (cliente.Pedidos != null && cliente.Pedidos.Any())
+        {
+            return Conflict(new { mensagem = "Não é possível excluir este cliente pois existem pedidos vinculados ao histórico dele." });
+        }
         _context.Clientes.Remove(cliente);
 
         await _context.SaveChangesAsync();
 
-        return Ok(new { mensagem = "Cliente excluído com sucesso." });
+        return NoContent();
     }
 }

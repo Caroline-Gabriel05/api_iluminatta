@@ -1,6 +1,7 @@
 using Iluminatta.Api.Data;
 using Iluminatta.Api.DTOs;
 using Iluminatta.Api.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,7 +19,7 @@ public class ProdutosController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetProdutos()
+    public async Task<IActionResult> BuscaProdutos()
     {
         var produtos = await _context.Produtos
         .Select(p => new
@@ -40,7 +41,7 @@ public class ProdutosController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetProdutoPorId(int id)
+    public async Task<IActionResult> BuscaProdutoPorId(int id)
     {
         var produto = await _context.Produtos
             .Where(p => p.Id == id)
@@ -68,7 +69,42 @@ public class ProdutosController : ControllerBase
         return Ok(produto);
     }
 
+    
+    [HttpPost]
+    [Authorize]
+    async Task<ActionResult<ProdutoResponseDto>> CriarProduto([FromBody] ProdutoCreateDto dto)
+    {
+        var marcaExiste = await _context.Marcas.AnyAsync(m => m.Id == dto.MarcaId);
+        if (!marcaExiste)
+        {
+            return BadRequest(new { mensagem = "A marca informada não existe." });
+        }
+        var produto = new Produto
+        {
+            Nome = dto.Nome,
+            Preco = dto.Preco,
+            Estoque = dto.Estoque,
+            MarcaId = dto.MarcaId,
+            CategoriaId = dto.CategoriaId
+        };
+
+        _context.Produtos.Add(produto);
+        await _context.SaveChangesAsync();
+        
+        var responseDto = new ProdutoResponseDto
+        {
+            Id = produto.Id,
+            Nome = produto.Nome,
+            Preco = produto.Preco,
+            Estoque = produto.Estoque,
+            MarcaId = produto.MarcaId,
+            CategoriaId = produto.CategoriaId
+        };
+    return CreatedAtAction(nameof(BuscaProdutoPorId), new { id = produto.Id }, responseDto);
+    }
+
     [HttpPost("{id}/imagens")]
+    [Authorize]
     public async Task<IActionResult> AdicionarImagem(int id, ImagemProdutoDto imagemDto)
     {
         var produto = await _context.Produtos
@@ -98,6 +134,7 @@ public class ProdutosController : ControllerBase
     }
 
     [HttpDelete("{produtoId}/imagens/{imagemId}")]
+    [Authorize]
     public async Task<IActionResult> ExcluirImagem(int produtoId, int imagemId)
     {
         var imagem = await _context.ImagensProdutos
@@ -117,49 +154,51 @@ public class ProdutosController : ControllerBase
         return Ok(new { mensagem = "Imagem excluída com sucesso." });
     }
 
-    [HttpPost]
-    public async Task<IActionResult> CriarProduto(ProdutoDto produtoDto)
-    {
-        var produto = new Produto
-        {
-            MarcaId = produtoDto.MarcaId,
-            CategoriaId = produtoDto.CategoriaId,
-            Nome = produtoDto.Nome,
-            Modelo = produtoDto.Modelo,
-            Descricao = produtoDto.Descricao,
-            Preco = produtoDto.Preco,
-            Estoque = produtoDto.Estoque
-        };
-
-        _context.Produtos.Add(produto);
-        await _context.SaveChangesAsync();
-        return Ok(produto);
-    }
-
     [HttpPut("{id}")]
-    public async Task<IActionResult> EditarProduto(int id, ProdutoDto produtoDto)
+    [Authorize]
+    public async Task<IActionResult> EditarProduto(int id, [FromBody] ProdutoUpdateDto dto)
     {
-        var produto = await _context.Produtos
-            .FirstOrDefaultAsync(p => p.Id == id);
+        var produto = await _context.Produtos.FindAsync(id);
         if (produto == null)
         {
-            return NotFound(new { mensagem = "Produto não encontrado."});
+            return NotFound(new { mensagem = "Produto não encontrado." });
         }
 
-        produto.MarcaId = produtoDto.MarcaId;
-        produto.CategoriaId = produtoDto.CategoriaId;
-        produto.Nome = produtoDto.Nome;
-        produto.Modelo = produtoDto.Modelo;
-        produto.Descricao = produtoDto.Descricao;
-        produto.Preco = produtoDto.Preco;
-        produto.Estoque = produtoDto.Estoque;
+        var marcaExiste = await _context.Marcas.AnyAsync(m => m.Id == dto.MarcaId);
+        if (!marcaExiste)
+        {
+            return BadRequest(new { mensagem = "A marca informada não existe." });
+        }
 
-        await _context.SaveChangesAsync();
+        var categoriaExiste = await _context.Categorias.AnyAsync(c => c.Id == dto.CategoriaId);
+        if (!categoriaExiste)
+        {
+            return BadRequest(new { mensagem = "A categoria informada não existe." });
+        }
 
-        return Ok(produto);
+        produto.Nome = dto.Nome;
+        produto.Modelo = dto.Modelo;
+        produto.Descricao = dto.Descricao;
+        produto.Preco = dto.Preco;
+        produto.Estoque = dto.Estoque;
+        produto.MarcaId = dto.MarcaId;
+        produto.CategoriaId = dto.CategoriaId;
+
+        _context.Produtos.Update(produto);
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return Conflict(new { mensagem = "Ocorreu um conflito de concorrência. Este produto foi alterado por outro usuário. Por favor, atualize a página e tente novamente." });
+        }
+
+        return NoContent();
     }
 
     [HttpDelete("{id}")]
+    [Authorize]
     public async Task<IActionResult> ExcluirProduto(int id)
     {
         var produto = await _context.Produtos

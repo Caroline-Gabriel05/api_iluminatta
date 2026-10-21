@@ -1,5 +1,6 @@
 using Iluminatta.Api.DTOs;
 using Iluminatta.Api.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Iluminatta.Api.Controllers;
@@ -16,32 +17,25 @@ public class PagamentosController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CriarPagamento(PagamentoDto pagamentoDto)
+    [Authorize]
+    public async Task<IActionResult> CriarPagamento([FromBody] PagamentoCreateDto dto)
     {
         try
         {
-            var pagamento = await _pagamentoService.CriarPagamento(pagamentoDto);
-
-            return Ok(new
-            {
-                pagamento.Id,
-                pagamento.PedidoId,
-                pagamento.Valor,
-                pagamento.Status,
-                pagamento.MetodoPagamento,
-                pagamento.MercadoPagoId,
-                pagamento.DataPagamento
-            });
+            var resultado = await _pagamentoService.CriarPagamento(dto);
+            return Ok(resultado);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { mensagem = ex.Message });
         }
         catch (Exception ex)
         {
-            return BadRequest(new
-            {
-                mensagem = ex.Message
-            });
+            return BadRequest(new { mensagem = ex.Message });
         }
     }
     [HttpGet("{id}")]
+    [Authorize]
     public async Task<IActionResult> BuscarPagamentoPorId(int id)
     {
         var pagamento = await _pagamentoService.BuscarPagamentoPorId(id);

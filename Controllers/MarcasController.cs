@@ -1,6 +1,7 @@
 using Iluminatta.Api.Data;
 using Iluminatta.Api.DTOs;
 using Iluminatta.Api.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,7 +19,7 @@ public class MarcasController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetMarcas()
+    public async Task<IActionResult> BuscaMarcas()
     {
         var marcas = await _context.Marcas
         .Select(c => new
@@ -31,7 +32,7 @@ public class MarcasController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetMarcaPorId(int id)
+    public async Task<IActionResult> BuscaMarcaPorId(int id)
     {
         var marca = await _context.Marcas
             .Where(p => p.Id == id)
@@ -51,6 +52,7 @@ public class MarcasController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize]
     public async Task<IActionResult> CriarMarca(MarcaDto marcaDto)
     {
         var marca = new Marca
@@ -64,6 +66,7 @@ public class MarcasController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize]
     public async Task<IActionResult> EditarMarca(int id, MarcaDto marcaDto)
     {
         var marca = await _context.Marcas
@@ -81,6 +84,7 @@ public class MarcasController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize]
     public async Task<IActionResult> ExcluirMarca(int id)
     {
         var marca = await _context.Marcas

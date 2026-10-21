@@ -15,60 +15,49 @@ public class PagamentoService
         _context = context;
     }
 
-    
-    public async Task<Pagamento> CriarPagamento(PagamentoDto pagamentoDto)
+    public async Task<PagamentoResponseDto> CriarPagamento(PagamentoCreateDto dto)
     {
-        var pedido = await _context.Pedidos
-            .FirstOrDefaultAsync(p => p.Id == pagamentoDto.PedidoId);
-
-        if (pedido == null)
-        {
-            throw new KeyNotFoundException("Pedido não encontrado.");
-        }
-
-        if (string.Equals(
-            pedido.Status,
-            "Cancelado",
-            StringComparison.OrdinalIgnoreCase))
-        {
-            throw new InvalidOperationException(
-                "Não é possível pagar um pedido cancelado.");
-        }
-
-        if (pedido.ValorTotal <= 0)
-        {
-            throw new InvalidOperationException(
-                "O valor total do pedido deve ser maior que zero.");
-        }
-
-        var pagamento = new Pagamento
-        {
-            PedidoId = pedido.Id,
-            Valor = pedido.ValorTotal,
-            Status = StatusPagamento.Pendente,
-            MetodoPagamento = pagamentoDto.MetodoPagamento,
-
-            DataPagamento = null
-        };
-
+        var pedido = await _context.Pedidos.FindAsync(dto.PedidoId);
+            if (pedido == null)
+            {
+                throw new KeyNotFoundException("Pedido não encontrado.");
+            }
 
         var pagamentoExistente = await _context.Pagamentos
-            .AnyAsync(p =>
-                p.PedidoId == pedido.Id &&
-                (p.Status == StatusPagamento.Pendente ||
-                p.Status == StatusPagamento.Aprovado));
+                .FirstOrDefaultAsync(p => p.PedidoId == dto.PedidoId && p.Status == "Pendente");
 
-        if (pagamentoExistente)
-        {
-            throw new InvalidOperationException(
-                "Este pedido já possui um pagamento pendente ou aprovado.");
+            if (pagamentoExistente != null)
+            {
+                return new PagamentoResponseDto
+                {
+                    Id = pagamentoExistente.Id,
+                    PedidoId = pagamentoExistente.PedidoId,
+                    Status = pagamentoExistente.Status,
+                    Valor = pagamentoExistente.Valor
+                };
+            }
+
+            var pagamento = new Pagamento
+            {
+                PedidoId = dto.PedidoId,
+                Valor = pedido.ValorTotal,
+                Status = "Pendente",
+                MetodoPagamento = dto.MetodoPagamento,
+                DataPagamento = DateTime.UtcNow,
+                MercadoPagoId = null 
+            };
+
+            _context.Pagamentos.Add(pagamento);
+            await _context.SaveChangesAsync();
+
+            return new PagamentoResponseDto
+            {
+                Id = pagamento.Id,
+                PedidoId = pagamento.PedidoId,
+                Status = pagamento.Status,
+                Valor = pagamento.Valor
+            };
         }
-
-        _context.Pagamentos.Add(pagamento);
-        await _context.SaveChangesAsync();
-
-        return pagamento;
-    }
 
     public async Task<Pagamento?> BuscarPagamentoPorId(int id)
     {

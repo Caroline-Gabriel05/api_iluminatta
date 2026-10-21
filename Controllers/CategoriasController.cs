@@ -1,6 +1,7 @@
 using Iluminatta.Api.Data;
 using Iluminatta.Api.DTOs;
 using Iluminatta.Api.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,7 +19,7 @@ public class CategoriasController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetCategorias()
+    public async Task<IActionResult> BuscaCategorias()
     {
         var categorias = await _context.Categorias
         .Select(c => new
@@ -31,7 +32,7 @@ public class CategoriasController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetCategoriaPorId(int id)
+    public async Task<IActionResult> BuscaCategoriaPorId(int id)
     {
         var categoria = await _context.Categorias
             .Where(p => p.Id == id)
@@ -51,6 +52,7 @@ public class CategoriasController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize]
     public async Task<IActionResult> CriarCategoria(CategoriaDto categoriaDto)
     {
         var categoria = new Categoria
@@ -64,6 +66,7 @@ public class CategoriasController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize]
     public async Task<IActionResult> EditarCategoria(int id, CategoriaDto categoriaDto)
     {
         var categoria = await _context.Categorias
@@ -81,6 +84,7 @@ public class CategoriasController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize]
     public async Task<IActionResult> ExcluirCategoria(int id)
     {
         var categoria = await _context.Categorias

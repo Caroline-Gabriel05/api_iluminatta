@@ -22,6 +22,8 @@ public class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        base.OnModelCreating(modelBuilder);
+
         modelBuilder.Entity<Categoria>(entity =>
         {
             entity.ToTable("tb_codigo_prod");
@@ -31,6 +33,7 @@ public class AppDbContext : DbContext
             entity.Property(p => p.Nome)
                 .HasColumnName("CATEGORIAS");
         });
+
         modelBuilder.Entity<Cliente>(entity =>
         {
             entity.ToTable("tb_cliente");
@@ -62,6 +65,7 @@ public class AppDbContext : DbContext
                 .HasMaxLength(254)
                 .IsRequired(false);
         });
+
         modelBuilder.Entity<ImagemProduto>(entity =>
         {
             entity.ToTable("tb_varias_img");
@@ -77,6 +81,7 @@ public class AppDbContext : DbContext
                 .HasForeignKey(p => p.ProdutoId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
+
         modelBuilder.Entity<ItemPedido>(entity =>
         {
             entity.ToTable("tb_item_carrinho");
@@ -91,11 +96,15 @@ public class AppDbContext : DbContext
                 .HasColumnName("QUANT_ITEM");
             entity.HasOne(p => p.Produto)
                 .WithMany(c => c.ItensPedidos)
-                .HasForeignKey(p => p.ProdutoId);
+                .HasForeignKey(p => p.ProdutoId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             entity.HasOne(p => p.Pedido)
                 .WithMany(c => c.ItensPedidos)
-                .HasForeignKey(p => p.PedidoId);
+                .HasForeignKey(p => p.PedidoId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
+
         modelBuilder.Entity<Marca>(entity =>
         {
             entity.ToTable("tb_marca");
@@ -105,37 +114,32 @@ public class AppDbContext : DbContext
             entity.Property(p => p.Nome)
                 .HasColumnName("MARCA");
         });
+
         modelBuilder.Entity<Pagamento>(entity =>
         {
             entity.ToTable("tb_pagamento");
-
             entity.HasKey(p => p.Id);
 
             entity.Property(p => p.Id)
                 .HasColumnName("CODIGO");
-
             entity.Property(p => p.PedidoId)
                 .HasColumnName("COD_PEDIDO");
-
             entity.Property(p => p.MercadoPagoId)
                 .HasColumnName("ID_MERCADO_PAGO");
-
             entity.Property(p => p.Valor)
                 .HasColumnName("VALOR");
-
             entity.Property(p => p.Status)
                 .HasColumnName("STATUS");
-
             entity.Property(p => p.MetodoPagamento)
                 .HasColumnName("METODO_PAGAMENTO");
-
             entity.Property(p => p.DataPagamento)
                 .HasColumnName("DATA_PAGAMENTO");
-
             entity.HasOne(p => p.Pedido)
                 .WithMany()
-                .HasForeignKey(p => p.PedidoId);
+                .HasForeignKey(p => p.PedidoId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
+
         modelBuilder.Entity<Pedido>(entity =>
         {
             entity.ToTable("tb_carrinho");
@@ -156,44 +160,44 @@ public class AppDbContext : DbContext
                 .HasColumnName("STATUS");
             entity.HasOne(p => p.Cliente)
                 .WithMany(c => c.Pedidos)
-                .HasForeignKey(p => p.ClienteId);
+                .HasForeignKey(p => p.ClienteId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
+
         modelBuilder.Entity<Produto>(entity =>
         {
             entity.ToTable("tb_produto");
-
             entity.HasKey(p => p.Id);
 
             entity.Property(p => p.Id)
                 .HasColumnName("COD_PRODUTO");
-
             entity.Property(p => p.MarcaId)
                 .HasColumnName("MARCA");
-
             entity.Property(p => p.CategoriaId)
                 .HasColumnName("CATEGORIAS");
-
             entity.Property(p => p.Nome)
                 .HasColumnName("NOME");
-
             entity.Property(p => p.Modelo)
                 .HasColumnName("MODELO");
-
             entity.Property(p => p.Descricao)
                 .HasColumnName("DESCRICAO");
             entity.Property(p => p.Preco)
                 .HasColumnName("PRECO");
-
             entity.Property(p => p.Estoque)
                 .HasColumnName("ESTOQUE");
-
             entity.HasOne(p => p.Categoria)
                 .WithMany(c => c.Produtos)
-                .HasForeignKey(p => p.CategoriaId);
+                .HasForeignKey(p => p.CategoriaId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.Property(p => p.RowVersion)
+                .IsRowVersion()
+                .HasColumnName("ROW_VERSION");
             entity.HasOne(p => p.Marca)
                 .WithMany(m => m.Produtos)
-                .HasForeignKey(p => p.MarcaId);
+                .HasForeignKey(p => p.MarcaId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
+
         modelBuilder.Entity<Usuario>(entity =>
         {
             entity.ToTable("tb_usuario");
@@ -208,9 +212,11 @@ public class AppDbContext : DbContext
                 .HasColumnName("SENHA");
             entity.Property(p => p.User)
                 .HasColumnName("USER");
+
             entity.HasOne(p => p.Cliente)
                 .WithMany(c => c.Usuarios)
-                .HasForeignKey(p => p.ClienteId);
+                .HasForeignKey(p => p.ClienteId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

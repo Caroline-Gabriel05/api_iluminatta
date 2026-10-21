@@ -8,11 +8,11 @@ namespace Iluminatta.Api.Models
         public string Genero { get; set; }
         public DateOnly DataNascimento { get; set; }
         public string Cpf { get; set; }
-        public int Cep { get; set; }
+        public string Cep { get; set; }
         public string Cidade { get; set; }
         public string Bairro { get; set; }
         public string Rua { get; set; }
-        public int Numero { get; set; }
+        public string Numero { get; set; }
         public string? Email { get; set; }
 
         public ICollection<Pedido> Pedidos { get; set; }

@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Iluminatta.Api.Models
 {
     public class Produto
@@ -10,6 +12,8 @@ namespace Iluminatta.Api.Models
         public string Descricao { get; set; }
         public decimal Preco { get; set; }
         public int Estoque { get; set; }
+        [Timestamp]
+        public byte[]? RowVersion { get; set; }
 
         public Categoria Categoria { get; set; }
         public Marca? Marca { get; set; }
